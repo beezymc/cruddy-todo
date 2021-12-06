@@ -8,7 +8,17 @@ var items = {};
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
 exports.create = (text, callback) => {
-  var id = counter.getNextUniqueId();
+  //get a unique id
+  //write a file with that unique ID as the filename and the text as data in the data directory.
+  counter.getNextUniqueId((err, id) => {
+    fs.writeFile('./datastore/data/' + id + '.txt', text, (err) => {
+      if (err) {
+        throw ('error writing counter');
+      } else {
+        callback(null, { id, text });
+      }
+    });
+  });
   items[id] = text;
   callback(null, { id, text });
 };
