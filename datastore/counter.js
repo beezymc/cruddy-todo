@@ -44,6 +44,7 @@ exports.getNextUniqueId = (callback) => {
   //write the new counter and return the written value via callback.
   //expect callback to have a second id argument that does typeof string.
   readCounter((err, number) => {
+    // number = 0 or what is in the file.
     number++;
     writeCounter(number, (err, counterString) => {
       callback(err, counterString);
