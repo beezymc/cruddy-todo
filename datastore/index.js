@@ -24,40 +24,75 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
+//use the fs.readdir method to retrieve an array of filenames from the exports.dataDir directory.
+//in the callback, you still need to return text to the client, but for now you can use the id in that field.
+  fs.readdir(exports.dataDir, (err, files) =>{
+    if (err) {
+      throw ('error reading from directory');
+    } else {
+      var data = _.map(files, (file) => {
+        id = path.basename(file, '.txt');
+        return { id, text: id };
+      });
+      callback(null, data);
+    }
   });
-  callback(null, data);
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  //fs readFile on the the file with the same id filename in exports.dataDir.
+  //invoke the callback using the data we retrieved as text and the id we were given as the id.
+  fs.readFile(exports.dataDir + '/' + id + '.txt', (err, filedata) => {
+    if (err) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      var text = String(filedata);
+      callback(null, { id, text });
+    }
+  });
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
-  if (!item) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    items[id] = text;
-    callback(null, { id, text });
-  }
+  fs.readdir(exports.dataDir, (err, files) =>{
+    if (err) {
+      throw ('error reading from directory');
+    } else {
+      var data = _.map(files, (file) => {
+        trimmedFilename = path.basename(file, '.txt');
+        return trimmedFilename;
+      });
+      if (!data.includes(id)) {
+        callback(new Error(`No item with id: ${id}`));
+      } else {
+        fs.writeFile(exports.dataDir + '/' + id + '.txt', text, (err) => {
+          if (err) {
+            throw ('error updating file');
+          } else {
+            callback(null, { id, text });
+          }
+        });
+      }
+    }
+  });
 };
 
 exports.delete = (id, callback) => {
-  var item = items[id];
-  delete items[id];
-  if (!item) {
-    // report an error if item not found
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback();
-  }
+  //fs.unlink(filepath, callback(error));
+  fs.unlink(exports.dataDir + '/' + id + '.txt', (err) => {
+    if (err) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      callback();
+    }
+  });
+  // var item = items[id];
+  // delete items[id];
+  // if (!item) {
+  //   // report an error if item not found
+  //   callback(new Error(`No item with id: ${id}`));
+  // } else {
+  //   callback();
+  // }
 };
 
 // Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
