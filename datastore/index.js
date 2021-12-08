@@ -3,7 +3,7 @@ const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
 const Promise = require('bluebird');
-const fsAsync = Promise.promisifyAll(require('fs'));
+var readFileAsync = Promise.promisify(require('fs').readFile);
 
 var items = {};
 
@@ -29,33 +29,25 @@ exports.readAll = (callback) => {
 //inputs: callback
 //outputs: An array of objects that have an id and a text field.
 //convert the current function into a promises version.
-  return fsAsync.readdir(exports.dataDir)
-    .then(files => {
-      var data = _.map(files, (file) => {
-        id = path.basename(file, '.txt');
-        return { id, text: id };
+  fs.readdir(exports.dataDir, (err, files) => {
+    if (err) {
+      throw ('error reading directory');
+    } else {
+      let data = _.map(files, (file) => {
+        let id = path.basename(file, '.txt');
+        return readFileAsync(exports.dataDir + '/' + file).then((fileData) => {
+          return {
+            id: id,
+            text: String(fileData)
+          };
+        });
       });
-    })
-    .catch(err => {
-      console.log('error reading all files');
-    });
-
-  //   (err, files) =>{
-  //   if (err) {
-  //     throw ('error reading from directory');
-  //   } else {
-  //     //create an empty array
-  //     //push each file that we're reading into the empty array
-  //     //once that loop completes, run promise.all on the array and
-  //     //return that array to the user.
-  //     var data = _.map(files, (file) => {
-  //       id = path.basename(file, '.txt');
-  //       return { id, text: id };
-
-  //     });
-  //     callback(null, data);
-  //   }
-  // });
+      Promise.all(data)
+        .then((items) => {
+          callback(null, items);
+        });
+    }
+  });
 };
 
 exports.readOne = (id, callback) => {
